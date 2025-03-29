@@ -1,0 +1,160 @@
+<html>
+<head>
+<title>main.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #6aab73;}
+.s5 { color: #2aacb8;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.py</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">sqlite3</span>
+<span class="s0">import </span><span class="s1">pandas </span><span class="s0">as </span><span class="s1">pd</span>
+<span class="s0">from </span><span class="s1">sqlalchemy </span><span class="s0">import </span><span class="s1">create_engine</span>
+<span class="s0">from </span><span class="s1">zipfile </span><span class="s0">import </span><span class="s1">ZipFile</span>
+<span class="s0">import </span><span class="s1">numpy </span><span class="s0">as </span><span class="s1">np</span>
+<span class="s0">import </span><span class="s1">matplotlib</span><span class="s2">.</span><span class="s1">pyplot </span><span class="s0">as </span><span class="s1">plt</span>
+<span class="s0">import </span><span class="s1">seaborn </span><span class="s0">as </span><span class="s1">sns</span>
+<span class="s0">from </span><span class="s1">sklearn</span><span class="s2">.</span><span class="s1">model_selection </span><span class="s0">import </span><span class="s1">train_test_split</span>
+<span class="s0">from </span><span class="s1">sklearn</span><span class="s2">.</span><span class="s1">linear_model </span><span class="s0">import </span><span class="s1">LinearRegression</span><span class="s2">, </span><span class="s1">LogisticRegression</span>
+<span class="s0">from </span><span class="s1">sklearn</span><span class="s2">.</span><span class="s1">tree </span><span class="s0">import </span><span class="s1">DecisionTreeClassifier</span>
+<span class="s0">from </span><span class="s1">sklearn</span><span class="s2">.</span><span class="s1">ensemble </span><span class="s0">import </span><span class="s1">RandomForestClassifier</span><span class="s2">, </span><span class="s1">GradientBoostingClassifier</span>
+<span class="s0">from </span><span class="s1">xgboost </span><span class="s0">import </span><span class="s1">XGBClassifier</span>
+<span class="s0">from </span><span class="s1">sklearn</span><span class="s2">.</span><span class="s1">metrics </span><span class="s0">import </span><span class="s1">mean_squared_error</span><span class="s2">, </span><span class="s1">accuracy_score</span><span class="s2">, </span><span class="s1">confusion_matrix</span>
+<span class="s0">import </span><span class="s1">streamlit </span><span class="s0">as </span><span class="s1">st</span>
+
+<span class="s3"># Extract the SQLite file from the zip</span>
+<span class="s1">zip_path </span><span class="s2">= </span><span class="s4">'/Users/ngoubimaximilliandiamgha/Desktop/database.sqlite.zip'</span>
+<span class="s0">with </span><span class="s1">ZipFile</span><span class="s2">(</span><span class="s1">zip_path</span><span class="s2">, </span><span class="s4">'r'</span><span class="s2">) </span><span class="s0">as </span><span class="s1">zip_ref</span><span class="s2">:</span>
+    <span class="s1">zip_ref</span><span class="s2">.</span><span class="s1">extractall</span><span class="s2">(</span><span class="s4">'/Users/ngoubimaximilliandiamgha/Desktop/'</span><span class="s2">)</span>
+
+<span class="s3"># Path to your extracted SQLite file</span>
+<span class="s1">sqlite_db_path </span><span class="s2">= </span><span class="s4">'/Users/ngoubimaximilliandiamgha/Desktop/database.sqlite'</span>
+
+<span class="s3"># Connect to SQLite</span>
+<span class="s1">conn </span><span class="s2">= </span><span class="s1">sqlite3</span><span class="s2">.</span><span class="s1">connect</span><span class="s2">(</span><span class="s1">sqlite_db_path</span><span class="s2">)</span>
+
+<span class="s3"># PostgreSQL connection details</span>
+<span class="s1">postgres_user </span><span class="s2">= </span><span class="s4">'postgres'</span>
+<span class="s1">postgres_password </span><span class="s2">= </span><span class="s4">'hope'</span>
+<span class="s1">postgres_host </span><span class="s2">= </span><span class="s4">'localhost'</span>
+<span class="s1">postgres_port </span><span class="s2">= </span><span class="s4">'5432'</span>
+<span class="s1">postgres_db </span><span class="s2">= </span><span class="s4">'DataAnalysisusingSQL'</span>
+
+<span class="s1">postgres_conn_str </span><span class="s2">= </span><span class="s4">f'postgresql://</span><span class="s0">{</span><span class="s1">postgres_user</span><span class="s0">}</span><span class="s4">:</span><span class="s0">{</span><span class="s1">postgres_password</span><span class="s0">}</span><span class="s4">@</span><span class="s0">{</span><span class="s1">postgres_host</span><span class="s0">}</span><span class="s4">:</span><span class="s0">{</span><span class="s1">postgres_port</span><span class="s0">}</span><span class="s4">/</span><span class="s0">{</span><span class="s1">postgres_db</span><span class="s0">}</span><span class="s4">'</span>
+<span class="s1">postgres_engine </span><span class="s2">= </span><span class="s1">create_engine</span><span class="s2">(</span><span class="s1">postgres_conn_str</span><span class="s2">)</span>
+
+<span class="s3"># Transfer tables to PostgreSQL</span>
+<span class="s1">tables_query </span><span class="s2">= </span><span class="s4">&quot;SELECT name FROM sqlite_master WHERE type='table';&quot;</span>
+<span class="s1">tables </span><span class="s2">= </span><span class="s1">pd</span><span class="s2">.</span><span class="s1">read_sql_query</span><span class="s2">(</span><span class="s1">tables_query</span><span class="s2">, </span><span class="s1">conn</span><span class="s2">)[</span><span class="s4">'name'</span><span class="s2">].</span><span class="s1">tolist</span><span class="s2">()</span>
+
+<span class="s0">for </span><span class="s1">table </span><span class="s0">in </span><span class="s1">tables</span><span class="s2">:</span>
+    <span class="s1">df </span><span class="s2">= </span><span class="s1">pd</span><span class="s2">.</span><span class="s1">read_sql_query</span><span class="s2">(</span><span class="s4">f'SELECT * FROM </span><span class="s0">{</span><span class="s1">table</span><span class="s0">}</span><span class="s4">'</span><span class="s2">, </span><span class="s1">conn</span><span class="s2">)</span>
+    <span class="s1">df</span><span class="s2">.</span><span class="s1">to_sql</span><span class="s2">(</span><span class="s1">table</span><span class="s2">, </span><span class="s1">postgres_engine</span><span class="s2">, </span><span class="s1">if_exists</span><span class="s2">=</span><span class="s4">'replace'</span><span class="s2">, </span><span class="s1">index</span><span class="s2">=</span><span class="s0">False</span><span class="s2">)</span>
+    <span class="s1">print</span><span class="s2">(</span><span class="s4">f'Table </span><span class="s0">{</span><span class="s1">table</span><span class="s0">} </span><span class="s4">transferred successfully.'</span><span class="s2">)</span>
+
+<span class="s3"># Load Match data</span>
+<span class="s1">matches_df </span><span class="s2">= </span><span class="s1">pd</span><span class="s2">.</span><span class="s1">read_sql</span><span class="s2">(</span><span class="s4">&quot;SELECT * FROM Match;&quot;</span><span class="s2">, </span><span class="s1">conn</span><span class="s2">)</span>
+
+<span class="s3"># Data preprocessing</span>
+<span class="s1">matches_df</span><span class="s2">.</span><span class="s1">dropna</span><span class="s2">(</span><span class="s1">inplace</span><span class="s2">=</span><span class="s0">True</span><span class="s2">)</span>
+<span class="s1">matches_df</span><span class="s2">[</span><span class="s4">'goal_difference'</span><span class="s2">] = </span><span class="s1">matches_df</span><span class="s2">[</span><span class="s4">'home_team_goal'</span><span class="s2">] - </span><span class="s1">matches_df</span><span class="s2">[</span><span class="s4">'away_team_goal'</span><span class="s2">]</span>
+<span class="s1">matches_df</span><span class="s2">[</span><span class="s4">'result'</span><span class="s2">] = </span><span class="s1">np</span><span class="s2">.</span><span class="s1">where</span><span class="s2">(</span><span class="s1">matches_df</span><span class="s2">[</span><span class="s4">'goal_difference'</span><span class="s2">] &gt; </span><span class="s5">0</span><span class="s2">, </span><span class="s5">1</span><span class="s2">, </span><span class="s5">0</span><span class="s2">)</span>
+
+<span class="s3"># Regression Analysis</span>
+<span class="s1">X_reg </span><span class="s2">= </span><span class="s1">matches_df</span><span class="s2">[[</span><span class="s4">'home_team_goal'</span><span class="s2">, </span><span class="s4">'away_team_goal'</span><span class="s2">]]</span>
+<span class="s1">y_reg </span><span class="s2">= </span><span class="s1">matches_df</span><span class="s2">[</span><span class="s4">'goal_difference'</span><span class="s2">]</span>
+
+<span class="s1">X_train_reg</span><span class="s2">, </span><span class="s1">X_test_reg</span><span class="s2">, </span><span class="s1">y_train_reg</span><span class="s2">, </span><span class="s1">y_test_reg </span><span class="s2">= </span><span class="s1">train_test_split</span><span class="s2">(</span><span class="s1">X_reg</span><span class="s2">, </span><span class="s1">y_reg</span><span class="s2">, </span><span class="s1">test_size</span><span class="s2">=</span><span class="s5">0.2</span><span class="s2">, </span><span class="s1">random_state</span><span class="s2">=</span><span class="s5">42</span><span class="s2">)</span>
+<span class="s1">reg_model </span><span class="s2">= </span><span class="s1">LinearRegression</span><span class="s2">()</span>
+<span class="s1">reg_model</span><span class="s2">.</span><span class="s1">fit</span><span class="s2">(</span><span class="s1">X_train_reg</span><span class="s2">, </span><span class="s1">y_train_reg</span><span class="s2">)</span>
+<span class="s1">y_pred_reg </span><span class="s2">= </span><span class="s1">reg_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">(</span><span class="s1">X_test_reg</span><span class="s2">)</span>
+<span class="s1">reg_mse </span><span class="s2">= </span><span class="s1">mean_squared_error</span><span class="s2">(</span><span class="s1">y_test_reg</span><span class="s2">, </span><span class="s1">y_pred_reg</span><span class="s2">)</span>
+
+<span class="s3"># Classification Models</span>
+<span class="s1">X_clf </span><span class="s2">= </span><span class="s1">matches_df</span><span class="s2">[[</span><span class="s4">'home_team_goal'</span><span class="s2">, </span><span class="s4">'away_team_goal'</span><span class="s2">]]</span>
+<span class="s1">y_clf </span><span class="s2">= </span><span class="s1">matches_df</span><span class="s2">[</span><span class="s4">'result'</span><span class="s2">]</span>
+
+<span class="s1">X_train_clf</span><span class="s2">, </span><span class="s1">X_test_clf</span><span class="s2">, </span><span class="s1">y_train_clf</span><span class="s2">, </span><span class="s1">y_test_clf </span><span class="s2">= </span><span class="s1">train_test_split</span><span class="s2">(</span><span class="s1">X_clf</span><span class="s2">, </span><span class="s1">y_clf</span><span class="s2">, </span><span class="s1">test_size</span><span class="s2">=</span><span class="s5">0.2</span><span class="s2">, </span><span class="s1">random_state</span><span class="s2">=</span><span class="s5">42</span><span class="s2">)</span>
+
+<span class="s3"># Logistic Regression</span>
+<span class="s1">log_model </span><span class="s2">= </span><span class="s1">LogisticRegression</span><span class="s2">()</span>
+<span class="s1">log_model</span><span class="s2">.</span><span class="s1">fit</span><span class="s2">(</span><span class="s1">X_train_clf</span><span class="s2">, </span><span class="s1">y_train_clf</span><span class="s2">)</span>
+<span class="s1">y_pred_log </span><span class="s2">= </span><span class="s1">log_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">(</span><span class="s1">X_test_clf</span><span class="s2">)</span>
+<span class="s1">log_accuracy </span><span class="s2">= </span><span class="s1">accuracy_score</span><span class="s2">(</span><span class="s1">y_test_clf</span><span class="s2">, </span><span class="s1">y_pred_log</span><span class="s2">)</span>
+
+<span class="s3"># Decision Tree</span>
+<span class="s1">tree_model </span><span class="s2">= </span><span class="s1">DecisionTreeClassifier</span><span class="s2">()</span>
+<span class="s1">tree_model</span><span class="s2">.</span><span class="s1">fit</span><span class="s2">(</span><span class="s1">X_train_clf</span><span class="s2">, </span><span class="s1">y_train_clf</span><span class="s2">)</span>
+<span class="s1">y_pred_tree </span><span class="s2">= </span><span class="s1">tree_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">(</span><span class="s1">X_test_clf</span><span class="s2">)</span>
+<span class="s1">tree_accuracy </span><span class="s2">= </span><span class="s1">accuracy_score</span><span class="s2">(</span><span class="s1">y_test_clf</span><span class="s2">, </span><span class="s1">y_pred_tree</span><span class="s2">)</span>
+
+<span class="s3"># Random Forest</span>
+<span class="s1">rf_model </span><span class="s2">= </span><span class="s1">RandomForestClassifier</span><span class="s2">()</span>
+<span class="s1">rf_model</span><span class="s2">.</span><span class="s1">fit</span><span class="s2">(</span><span class="s1">X_train_clf</span><span class="s2">, </span><span class="s1">y_train_clf</span><span class="s2">)</span>
+<span class="s1">y_pred_rf </span><span class="s2">= </span><span class="s1">rf_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">(</span><span class="s1">X_test_clf</span><span class="s2">)</span>
+<span class="s1">rf_accuracy </span><span class="s2">= </span><span class="s1">accuracy_score</span><span class="s2">(</span><span class="s1">y_test_clf</span><span class="s2">, </span><span class="s1">y_pred_rf</span><span class="s2">)</span>
+
+<span class="s3"># Gradient Boosting</span>
+<span class="s1">gb_model </span><span class="s2">= </span><span class="s1">GradientBoostingClassifier</span><span class="s2">()</span>
+<span class="s1">gb_model</span><span class="s2">.</span><span class="s1">fit</span><span class="s2">(</span><span class="s1">X_train_clf</span><span class="s2">, </span><span class="s1">y_train_clf</span><span class="s2">)</span>
+<span class="s1">y_pred_gb </span><span class="s2">= </span><span class="s1">gb_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">(</span><span class="s1">X_test_clf</span><span class="s2">)</span>
+<span class="s1">gb_accuracy </span><span class="s2">= </span><span class="s1">accuracy_score</span><span class="s2">(</span><span class="s1">y_test_clf</span><span class="s2">, </span><span class="s1">y_pred_gb</span><span class="s2">)</span>
+
+<span class="s3"># XGBoost</span>
+<span class="s1">xgb_model </span><span class="s2">= </span><span class="s1">XGBClassifier</span><span class="s2">(</span><span class="s1">use_label_encoder</span><span class="s2">=</span><span class="s0">False</span><span class="s2">, </span><span class="s1">eval_metric</span><span class="s2">=</span><span class="s4">'logloss'</span><span class="s2">)</span>
+<span class="s1">xgb_model</span><span class="s2">.</span><span class="s1">fit</span><span class="s2">(</span><span class="s1">X_train_clf</span><span class="s2">, </span><span class="s1">y_train_clf</span><span class="s2">)</span>
+<span class="s1">y_pred_xgb </span><span class="s2">= </span><span class="s1">xgb_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">(</span><span class="s1">X_test_clf</span><span class="s2">)</span>
+<span class="s1">xgb_accuracy </span><span class="s2">= </span><span class="s1">accuracy_score</span><span class="s2">(</span><span class="s1">y_test_clf</span><span class="s2">, </span><span class="s1">y_pred_xgb</span><span class="s2">)</span>
+
+<span class="s3"># Streamlit App</span>
+<span class="s1">st</span><span class="s2">.</span><span class="s1">title</span><span class="s2">(</span><span class="s4">&quot;Football Match Analysis Dashboard&quot;</span><span class="s2">)</span>
+
+<span class="s1">st</span><span class="s2">.</span><span class="s1">header</span><span class="s2">(</span><span class="s4">&quot;Regression Analysis&quot;</span><span class="s2">)</span>
+<span class="s1">home_goal </span><span class="s2">= </span><span class="s1">st</span><span class="s2">.</span><span class="s1">number_input</span><span class="s2">(</span><span class="s4">&quot;Enter Home Team Goals&quot;</span><span class="s2">, </span><span class="s1">min_value</span><span class="s2">=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">step</span><span class="s2">=</span><span class="s5">1</span><span class="s2">)</span>
+<span class="s1">away_goal </span><span class="s2">= </span><span class="s1">st</span><span class="s2">.</span><span class="s1">number_input</span><span class="s2">(</span><span class="s4">&quot;Enter Away Team Goals&quot;</span><span class="s2">, </span><span class="s1">min_value</span><span class="s2">=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">step</span><span class="s2">=</span><span class="s5">1</span><span class="s2">)</span>
+
+<span class="s0">if </span><span class="s1">st</span><span class="s2">.</span><span class="s1">button</span><span class="s2">(</span><span class="s4">&quot;Predict Goal Difference&quot;</span><span class="s2">):</span>
+    <span class="s1">predicted_diff </span><span class="s2">= </span><span class="s1">reg_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">([[</span><span class="s1">home_goal</span><span class="s2">, </span><span class="s1">away_goal</span><span class="s2">]])[</span><span class="s5">0</span><span class="s2">]</span>
+    <span class="s1">st</span><span class="s2">.</span><span class="s1">write</span><span class="s2">(</span><span class="s4">f&quot;Predicted Goal Difference: </span><span class="s0">{</span><span class="s1">predicted_diff</span><span class="s0">:</span><span class="s4">.2f</span><span class="s0">}</span><span class="s4">&quot;</span><span class="s2">)</span>
+
+<span class="s1">st</span><span class="s2">.</span><span class="s1">header</span><span class="s2">(</span><span class="s4">&quot;Match Outcome Prediction&quot;</span><span class="s2">)</span>
+<span class="s1">classifier </span><span class="s2">= </span><span class="s1">st</span><span class="s2">.</span><span class="s1">selectbox</span><span class="s2">(</span><span class="s4">&quot;Choose Classifier&quot;</span><span class="s2">, [</span><span class="s4">&quot;Logistic Regression&quot;</span><span class="s2">, </span><span class="s4">&quot;Decision Tree&quot;</span><span class="s2">, </span><span class="s4">&quot;Random Forest&quot;</span><span class="s2">, </span><span class="s4">&quot;Gradient Boosting&quot;</span><span class="s2">, </span><span class="s4">&quot;XGBoost&quot;</span><span class="s2">])</span>
+
+<span class="s0">if </span><span class="s1">st</span><span class="s2">.</span><span class="s1">button</span><span class="s2">(</span><span class="s4">&quot;Predict Outcome&quot;</span><span class="s2">):</span>
+    <span class="s0">if </span><span class="s1">classifier </span><span class="s2">== </span><span class="s4">&quot;Logistic Regression&quot;</span><span class="s2">:</span>
+        <span class="s1">outcome </span><span class="s2">= </span><span class="s1">log_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">([[</span><span class="s1">home_goal</span><span class="s2">, </span><span class="s1">away_goal</span><span class="s2">]])[</span><span class="s5">0</span><span class="s2">]</span>
+        <span class="s1">accuracy </span><span class="s2">= </span><span class="s1">log_accuracy</span>
+    <span class="s0">elif </span><span class="s1">classifier </span><span class="s2">== </span><span class="s4">&quot;Decision Tree&quot;</span><span class="s2">:</span>
+        <span class="s1">outcome </span><span class="s2">= </span><span class="s1">tree_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">([[</span><span class="s1">home_goal</span><span class="s2">, </span><span class="s1">away_goal</span><span class="s2">]])[</span><span class="s5">0</span><span class="s2">]</span>
+        <span class="s1">accuracy </span><span class="s2">= </span><span class="s1">tree_accuracy</span>
+    <span class="s0">elif </span><span class="s1">classifier </span><span class="s2">== </span><span class="s4">&quot;Random Forest&quot;</span><span class="s2">:</span>
+        <span class="s1">outcome </span><span class="s2">= </span><span class="s1">rf_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">([[</span><span class="s1">home_goal</span><span class="s2">, </span><span class="s1">away_goal</span><span class="s2">]])[</span><span class="s5">0</span><span class="s2">]</span>
+        <span class="s1">accuracy </span><span class="s2">= </span><span class="s1">rf_accuracy</span>
+    <span class="s0">elif </span><span class="s1">classifier </span><span class="s2">== </span><span class="s4">&quot;Gradient Boosting&quot;</span><span class="s2">:</span>
+        <span class="s1">outcome </span><span class="s2">= </span><span class="s1">gb_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">([[</span><span class="s1">home_goal</span><span class="s2">, </span><span class="s1">away_goal</span><span class="s2">]])[</span><span class="s5">0</span><span class="s2">]</span>
+        <span class="s1">accuracy </span><span class="s2">= </span><span class="s1">gb_accuracy</span>
+    <span class="s0">else</span><span class="s2">:</span>
+        <span class="s1">outcome </span><span class="s2">= </span><span class="s1">xgb_model</span><span class="s2">.</span><span class="s1">predict</span><span class="s2">([[</span><span class="s1">home_goal</span><span class="s2">, </span><span class="s1">away_goal</span><span class="s2">]])[</span><span class="s5">0</span><span class="s2">]</span>
+        <span class="s1">accuracy </span><span class="s2">= </span><span class="s1">xgb_accuracy</span>
+
+    <span class="s1">result </span><span class="s2">= </span><span class="s4">&quot;Home Win&quot; </span><span class="s0">if </span><span class="s1">outcome </span><span class="s2">== </span><span class="s5">1 </span><span class="s0">else </span><span class="s4">&quot;Away Win or Draw&quot;</span>
+    <span class="s1">st</span><span class="s2">.</span><span class="s1">write</span><span class="s2">(</span><span class="s4">f&quot;Predicted Outcome: </span><span class="s0">{</span><span class="s1">result</span><span class="s0">} </span><span class="s4">(Accuracy: </span><span class="s0">{</span><span class="s1">accuracy</span><span class="s0">:</span><span class="s4">.2%</span><span class="s0">}</span><span class="s4">)&quot;</span><span class="s2">)</span>
+
+<span class="s3"># Close connections</span>
+<span class="s1">conn</span><span class="s2">.</span><span class="s1">close</span><span class="s2">()</span>
+<span class="s1">postgres_engine</span><span class="s2">.</span><span class="s1">dispose</span><span class="s2">()</span>
+
+<span class="s1">print</span><span class="s2">(</span><span class="s4">&quot;All operations executed successfully!&quot;</span><span class="s2">)</span>
+</pre>
+</body>
+</html>
